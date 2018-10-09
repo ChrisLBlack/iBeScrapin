@@ -14,15 +14,23 @@ app.use(express.static("public"));
 mongoose.connect("mongodb://localhost/scrapin", { useNewUrlParser: true });
 
 //this will be all of my routes for the app on the backend.
+
+//this route scrapes stories from Hacker News and saves them in the "result" object
 app.get("/scrape", function(req, res){
     axios.get("https://news.ycombinator.com/").then(function(response){
         let $ = cheerio.load(response.data);
 
-       $("tr td").each(function(i, element) {
+       $(".title").each(function(i, element) {
            let result = {};
 
            result.title = $(this).children("a").text();
-           console.log(result.title);
+           result.link = $(this).children("a").attr("href");
+
+           db.Article.create(result).then(function(dbArticle){
+               console.log(dbArticle)
+           }).catch(function (err){
+               return res.json(err)
+           });
        });
 
        res.send("Scrape Completed")
